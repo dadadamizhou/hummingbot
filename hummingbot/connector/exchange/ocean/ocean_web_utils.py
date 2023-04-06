@@ -1,6 +1,6 @@
 from typing import Callable, Optional
 
-from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS
+from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS
 from hummingbot.connector.time_synchronizer import TimeSynchronizer
 from hummingbot.connector.utils import TimeSynchronizerRESTPreProcessor
 from hummingbot.core.api_throttler.async_throttler import AsyncThrottler

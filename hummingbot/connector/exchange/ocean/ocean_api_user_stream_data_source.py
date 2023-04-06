@@ -3,8 +3,8 @@ import json
 import uuid
 from typing import TYPE_CHECKING, List, Optional
 
-from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS
-from hummingbot.connector.exchange.entropy.entropy_auth import EntropyAuth
+from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS
+from hummingbot.connector.exchange.ocean.ocean_auth import OceanAuth
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -12,10 +12,10 @@ from hummingbot.core.web_assistant.ws_assistant import WSAssistant
 from hummingbot.logger import HummingbotLogger
 
 if TYPE_CHECKING:
-    from hummingbot.connector.exchange.entropy.entropy_exchange import EntropyExchange
+    from hummingbot.connector.exchange.ocean.ocean_exchange import OceanExchange
 
 
-class EntropyAPIUserStreamDataSource(UserStreamTrackerDataSource):
+class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
     LISTEN_KEY_KEEP_ALIVE_INTERVAL = 1800  # Recommended to Ping/Update listen key to keep connection alive
     HEARTBEAT_TIME_INTERVAL = 30.0
 
@@ -23,9 +23,9 @@ class EntropyAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     def __init__(self,
                  trading_pairs: List[str],
-                 connector: 'EntropyExchange',
+                 connector: 'OceanExchange',
                  api_factory: WebAssistantsFactory,
-                 auth: EntropyAuth):
+                 auth: OceanAuth):
         super().__init__()
         self._auth = auth
         self._current_listen_key = None

@@ -15,31 +15,31 @@ DEFAULT_FEES = TradeFeeSchema(
 )
 
 
-class EntropyConfigMap(BaseConnectorConfigMap):
-    connector: str = Field(default="entropy", client_data=None)
-    entropy_uid: SecretStr = Field(
+class OceanConfigMap(BaseConnectorConfigMap):
+    connector: str = Field(default="ocean", client_data=None)
+    ocean_uid: SecretStr = Field(
         default=...,
         client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Entropy uid",
+            prompt=lambda cm: "Enter your Ocean uid",
             is_secure=True,
             is_connect_key=True,
             prompt_on_new=True,
         )
     )
-    entropy_apikey_id: SecretStr = Field(
+    ocean_apikey_id: SecretStr = Field(
         default=...,
         client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Entropy apikey id",
+            prompt=lambda cm: "Enter your Ocean apikey id",
             is_secure=True,
             is_connect_key=True,
             prompt_on_new=True,
         )
     )
 
-    entropy_private_key: SecretStr = Field(
+    ocean_private_key: SecretStr = Field(
         default=...,
         client_data=ClientFieldData(
-            prompt=lambda cm: "Enter your Entropy private key (Base64)",
+            prompt=lambda cm: "Enter your Ocean private key (Base64)",
             is_secure=True,
             is_connect_key=True,
             prompt_on_new=True,
@@ -47,7 +47,7 @@ class EntropyConfigMap(BaseConnectorConfigMap):
     )
 
     class Config:
-        title = "entropy"
+        title = "ocean"
 
 
-KEYS = EntropyConfigMap.construct()
+KEYS = OceanConfigMap.construct()

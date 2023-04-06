@@ -3,10 +3,10 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from bidict import bidict
 
-from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS, entropy_web_utils as web_utils
-from hummingbot.connector.exchange.entropy.entropy_api_order_book_data_source import EntropyAPIOrderBookDataSource
-from hummingbot.connector.exchange.entropy.entropy_api_user_stream_data_source import EntropyAPIUserStreamDataSource
-from hummingbot.connector.exchange.entropy.entropy_auth import EntropyAuth
+from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS, ocean_web_utils as web_utils
+from hummingbot.connector.exchange.ocean.ocean_api_order_book_data_source import OceanAPIOrderBookDataSource
+from hummingbot.connector.exchange.ocean.ocean_api_user_stream_data_source import OceanAPIUserStreamDataSource
+from hummingbot.connector.exchange.ocean.ocean_auth import OceanAuth
 from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
@@ -22,38 +22,38 @@ if TYPE_CHECKING:
     from hummingbot.client.config.config_helpers import ClientConfigAdapter
 
 
-class EntropyExchange(ExchangePyBase):
+class OceanExchange(ExchangePyBase):
     web_utils = web_utils
 
     def __init__(
             self,
             client_config_map: "ClientConfigAdapter",
-            entropy_uid: str,
-            entropy_apikey_id: str,
-            entropy_private_key: str,
+            ocean_uid: str,
+            ocean_apikey_id: str,
+            ocean_private_key: str,
             trading_pairs: Optional[List[str]] = None,
             trading_required: bool = True,
     ):
-        self.entropy_uid = entropy_uid
-        self.entropy_apikey_id = entropy_apikey_id
-        self.entropy_private_key = entropy_private_key
+        self.ocean_uid = ocean_uid
+        self.ocean_apikey_id = ocean_apikey_id
+        self.ocean_private_key = ocean_private_key
         self._trading_pairs = trading_pairs or []
         self._trading_required = trading_required
         super().__init__(client_config_map)
 
     @staticmethod
-    def entropy_order_type(order_type: OrderType) -> str:
+    def ocean_order_type(order_type: OrderType) -> str:
         return order_type.name.lower()
 
     @property
     def authenticator(self):
-        return EntropyAuth(
-            uid=self.entropy_uid, apikey_id=self.entropy_apikey_id, private_key=self.entropy_private_key
+        return OceanAuth(
+            uid=self.ocean_uid, apikey_id=self.ocean_apikey_id, private_key=self.ocean_private_key
         )
 
     @property
     def name(self):
-        return "entropy"
+        return "ocean"
 
     @property
     def rate_limits_rules(self):
@@ -109,7 +109,7 @@ class EntropyExchange(ExchangePyBase):
             auth=self._auth)
 
     def _create_order_book_data_source(self) -> OrderBookTrackerDataSource:
-        return EntropyAPIOrderBookDataSource(
+        return OceanAPIOrderBookDataSource(
             trading_pairs=self._trading_pairs,
             connector=self,
             api_factory=self._web_assistants_factory,
@@ -117,7 +117,7 @@ class EntropyExchange(ExchangePyBase):
         )
 
     def _create_user_stream_data_source(self) -> UserStreamTrackerDataSource:
-        return EntropyAPIUserStreamDataSource(
+        return OceanAPIUserStreamDataSource(
             trading_pairs=self._trading_pairs,
             connector=self,
             api_factory=self._web_assistants_factory,
@@ -158,7 +158,7 @@ class EntropyExchange(ExchangePyBase):
                            order_type: OrderType,
                            price: Decimal,
                            **kwargs) -> Tuple[str, float]:
-        type_str = EntropyExchange.entropy_order_type(order_type)
+        type_str = OceanExchange.ocean_order_type(order_type)
         side_str = CONSTANTS.SIDE_BUY if trade_type is TradeType.BUY else CONSTANTS.SIDE_SELL
         symbol = await self.exchange_symbol_associated_to_pair(trading_pair=trading_pair)
         api_params = {"market": symbol,

@@ -9,12 +9,12 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
-from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS
+from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
 
-class EntropyAuth(AuthBase):
+class OceanAuth(AuthBase):
 
     def __init__(self, uid: str, apikey_id: str, private_key: str):
         self.uid = uid
