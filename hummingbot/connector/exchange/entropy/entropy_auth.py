@@ -1,6 +1,7 @@
 import base64
 import json
 import time
+import uuid
 from typing import Any, Dict
 
 import jwt
@@ -52,7 +53,7 @@ class EntropyAuth(AuthBase):
             "command": "message",
             "data": json.dumps({
                 "action": "login",
-                "uuid": "69ac1055-147f-460d-b170-5e035bbde74f",
+                "uuid": str(uuid.uuid4()),
                 "args": {},
                 "header": {
                     "uid": self.uid,

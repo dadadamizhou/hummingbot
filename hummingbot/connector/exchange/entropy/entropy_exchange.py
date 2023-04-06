@@ -13,7 +13,7 @@ from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
 from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import TradeFeeBase
+from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -73,11 +73,11 @@ class EntropyExchange(ExchangePyBase):
 
     @property
     def trading_rules_request_path(self):
-        return CONSTANTS.TICKERS
+        return CONSTANTS.TICKERS_URL
 
     @property
     def trading_pairs_request_path(self):
-        return CONSTANTS.TICKERS
+        return CONSTANTS.TICKERS_URL
 
     @property
     def check_network_request_path(self):
@@ -137,7 +137,7 @@ class EntropyExchange(ExchangePyBase):
         symbol_list: List[Dict[str, Any]] = exchange_info_dict.get("data")
         for symbol in symbol_list:
             try:
-                trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=symbol_list)
+                trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=symbol)
                 retval.append(
                     TradingRule(
                         trading_pair=trading_pair,
@@ -206,16 +206,22 @@ class EntropyExchange(ExchangePyBase):
             is_maker: Optional[bool] = None,
     ) -> TradeFeeBase:
         is_maker = is_maker or (order_type in (OrderType.LIMIT_MAKER, OrderType.LIMIT))
-        return build_trade_fee(
-            exchange=self.name,
-            is_maker=is_maker,
-            base_currency=base_currency,
-            quote_currency=quote_currency,
-            order_type=order_type,
-            order_side=order_side,
-            amount=amount,
-            price=price,
-        )
+        trading_pair = combine_to_hb_trading_pair(base=base_currency, quote=quote_currency)
+        if trading_pair in self._trading_fees:
+            fees_data = self._trading_fees[trading_pair]
+            fee = AddedToCostTradeFee(percent=fees_data["ask_fee"]["value"])
+        else:
+            fee = build_trade_fee(
+                exchange=self.name,
+                is_maker=is_maker,
+                base_currency=base_currency,
+                quote_currency=quote_currency,
+                order_type=order_type,
+                order_side=order_side,
+                amount=amount,
+                price=price,
+            )
+        return fee
 
     async def _get_last_traded_price(self, trading_pair: str) -> float:
         params = {
@@ -273,13 +279,17 @@ class EntropyExchange(ExchangePyBase):
         return order_update
 
     async def _update_trading_fees(self):
-        """
-        Update fees information from the exchange
-        """
+        response = await self._api_post(
+            path_url=CONSTANTS.FEES_TRADING_URL
+        )
+        for fee_json in response["data"]:
+            trading_pair = await self.trading_pair_associated_to_exchange_symbol(symbol=fee_json["market"])
+            self._trading_fees[trading_pair] = fee_json
         pass
 
     async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
         pass
 
     async def _user_stream_event_listener(self):
+
         pass

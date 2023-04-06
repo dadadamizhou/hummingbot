@@ -9,9 +9,10 @@ REST_URL = "https://api.oceanex.pro/v1"
 WSS_URL = "wss://ws.oceanex.cc/ws/v1"
 
 # Public API
-TICKERS = "/tickers"
+TICKERS_URL = "/tickers"
 SERVER_TIME_URL = "/timestamp"
-ORDER_BOOK = "/order_book"
+ORDER_BOOK_URL = "/order_book"
+FEES_TRADING_URL = "/fees/trading"
 
 # Private API
 ORDER_PATH_URL = "/orders"
@@ -41,9 +42,9 @@ ORDER_STATUS = {
 }
 
 RATE_LIMITS = [
-    RateLimit(limit_id=TICKERS, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=TICKERS_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=SERVER_TIME_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
-    RateLimit(limit_id=ORDER_BOOK, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=ORDER_BOOK_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=CANCEL_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ACCOUNTS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
