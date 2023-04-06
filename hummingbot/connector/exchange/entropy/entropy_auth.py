@@ -9,6 +9,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import padding
 
+from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS
 from hummingbot.core.web_assistant.auth import AuthBase
 from hummingbot.core.web_assistant.connections.data_types import RESTMethod, RESTRequest, WSRequest
 
@@ -49,7 +50,7 @@ class EntropyAuth(AuthBase):
     def ws_login_parameters(self) -> Dict[str, Any]:
         cur = int(time.time() * 1000)
         return {
-            "identifier": json.dumps({"handler": "AuthHandler"}),
+            "identifier": json.dumps({"handler": CONSTANTS.AUTH_HANDLER}),
             "command": "message",
             "data": json.dumps({
                 "action": "login",

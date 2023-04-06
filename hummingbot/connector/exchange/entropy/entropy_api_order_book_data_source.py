@@ -1,3 +1,6 @@
+import asyncio
+import json
+import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS, entropy_web_utils as web_utils
@@ -72,3 +75,43 @@ class EntropyAPIOrderBookDataSource(OrderBookTrackerDataSource):
             raise IOError("Private websocket connection authentication failed")
 
         return ws
+
+    async def _subscribe_channels(self, ws: WSAssistant):
+        try:
+            for trading_pair in self._trading_pairs:
+                symbol: str = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
+                payload = {
+                    "identifier": json.dumps({"handler": CONSTANTS.ORDER_BOOK_HANDLER}),
+                    "command": "message",
+                    "data": json.dumps({
+                        "action": "index",
+                        "uuid": str(uuid.uuid4()),
+                        "args": {
+                            "market_id": symbol
+                        }
+                    })
+                }
+                subscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=payload)
+                payload = {
+                    "identifier": json.dumps({"handler": CONSTANTS.TICKER_HANDLER}),
+                    "command": "message",
+                    "data": json.dumps({
+                        "action": "index",
+                        "uuid": str(uuid.uuid4()),
+                        "args": {
+                            "market_id": [symbol]
+                        }
+                    })
+                }
+                subscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=payload)
+                await ws.send(subscribe_orderbook_request)
+                await ws.send(subscribe_trade_request)
+            self.logger().info("Subscribed to public order book and trade channels...")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            self.logger().error(
+                "Unexpected error occurred subscribing to order book trading and delta streams...",
+                exc_info=True,
+            )
+            raise

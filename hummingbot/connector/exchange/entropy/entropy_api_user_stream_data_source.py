@@ -1,4 +1,6 @@
 import asyncio
+import json
+import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 from hummingbot.connector.exchange.entropy import entropy_constants as CONSTANTS
@@ -53,26 +55,27 @@ class EntropyAPIUserStreamDataSource(UserStreamTrackerDataSource):
         return ws
 
     async def _subscribe_channels(self, websocket_assistant: WSAssistant):
-        # try:
-        #     payload = {
-        #         "identifier": "{\"handler\":\"OrderHandler\"}",
-        #         "command": "message",
-        #         "data": json.dumps({
-        #             "action": "show",
-        #             "uuid": str(uuid.uuid4()),
-        #             "args": {
-        #                 "id": 44441592
-        #             }
-        #         })
-        #     }
-        #     subscribe_asset_request: WSJSONRequest = WSJSONRequest(payload=payload)
-        #     await websocket_assistant.send(subscribe_asset_request)
-        #     self.logger().info("Subscribed to user assets and order websocket channels...")
-        # except asyncio.CancelledError:
-        #     raise
-        # except Exception:
-        #     self.logger().exception("Unexpected error occurred subscribing to user asset and order updates...")
-        #     raise
+        try:
+            for trading_pair in self._trading_pairs:
+                payload = {
+                    "identifier": json.dumps({"handler": CONSTANTS.OrderHistoryHandler}),
+                    "command": "message",
+                    "data": json.dumps({
+                        "action": "index",
+                        "uuid": str(uuid.uuid4()),
+                        "args": {
+                            "market": await self._connector.exchange_symbol_associated_to_pair(trading_pair)
+                        }
+                    })
+                }
+                subscribe_asset_request: WSJSONRequest = WSJSONRequest(payload=payload)
+                await websocket_assistant.send(subscribe_asset_request)
+            self.logger().info("Subscribed to user assets and order websocket channels...")
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            self.logger().exception("Unexpected error occurred subscribing to user asset and order updates...")
+            raise
         pass
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):

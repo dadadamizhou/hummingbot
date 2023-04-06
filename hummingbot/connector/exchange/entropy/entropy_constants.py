@@ -20,6 +20,13 @@ CANCEL_ORDER_PATH_URL = "/order/delete"
 ACCOUNTS_PATH_URL = "/members/me"
 TRADES_PATH_URL = "/trades"
 
+# wss handler
+ORDER_BOOK_HANDLER = "OrderBookHandler"
+TICKER_HANDLER = "TickerHandler"
+
+AUTH_HANDLER = "AuthHandler"
+ORDER_HISTORY_HANDLER = "OrderHistoryHandler"
+
 WS_HEARTBEAT_TIME_INTERVAL = 30
 
 SIDE_BUY = 'buy'
@@ -31,14 +38,12 @@ ONE_DAY = 86400
 
 MAX_REQUEST = 5000
 
-# Order States
 ORDER_STATUS = {
-    -1: OrderState.CANCELED,
-    0: OrderState.OPEN,
-    1: OrderState.PARTIALLY_FILLED,
-    2: OrderState.FILLED,
-    3: OrderState.CANCELED,  # Partially Filled and Cancelled
-    4: OrderState.PENDING_CANCEL
+    "wait": OrderState.OPEN,
+    "wait_trigger": OrderState.OPEN,
+    "cancel": OrderState.CANCELED,
+    "done": OrderState.FILLED,
+    "cancelling": OrderState.PENDING_CANCEL,
 }
 
 RATE_LIMITS = [

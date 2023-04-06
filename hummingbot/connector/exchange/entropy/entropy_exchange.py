@@ -267,7 +267,7 @@ class EntropyExchange(ExchangePyBase):
             err_msg: str = response.get("message")
             raise ValueError(f"Error submitting order: {err_code} {err_msg} Response: {response}")
         updated_order_data = response.get("data")[0]
-        new_state = CONSTANTS.ORDER_STATE[updated_order_data["status"]]
+        new_state = CONSTANTS.ORDER_STATUS[updated_order_data["status"]]
 
         order_update = OrderUpdate(
             client_order_id=tracked_order.client_order_id,
