@@ -1,5 +1,4 @@
 import asyncio
-import json
 import uuid
 from typing import TYPE_CHECKING, List, Optional
 
@@ -58,15 +57,15 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
         try:
             for trading_pair in self._trading_pairs:
                 payload = {
-                    "identifier": json.dumps({"handler": CONSTANTS.OrderHistoryHandler}),
+                    "identifier": {"handler": CONSTANTS.OrderHistoryHandler},
                     "command": "message",
-                    "data": json.dumps({
+                    "data": {
                         "action": "index",
                         "uuid": str(uuid.uuid4()),
                         "args": {
                             "market": await self._connector.exchange_symbol_associated_to_pair(trading_pair)
                         }
-                    })
+                    }
                 }
                 subscribe_asset_request: WSJSONRequest = WSJSONRequest(payload=payload)
                 await websocket_assistant.send(subscribe_asset_request)

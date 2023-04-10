@@ -129,7 +129,7 @@ class OceanExchange(ExchangePyBase):
         symbol_list: List[Dict[str, Any]] = exchange_info.get("data")
         for symbol in symbol_list:
             mapping[symbol] = combine_to_hb_trading_pair(base=symbol_list[symbol]["base_unit"].upper(),
-                                                         quote=symbol_list["symbol"]["quote_unit"].upper())
+                                                         quote=symbol_list[symbol]["quote_unit"].upper())
         self._set_trading_pair_symbol_map(mapping)
 
     async def _format_trading_rules(self, exchange_info_dict: Dict[str, Any]) -> List[TradingRule]:
@@ -267,7 +267,7 @@ class OceanExchange(ExchangePyBase):
             err_msg: str = response.get("message")
             raise ValueError(f"Error submitting order: {err_code} {err_msg} Response: {response}")
         updated_order_data = response.get("data")[0]
-        new_state = CONSTANTS.ORDER_STATUS[updated_order_data["status"]]
+        new_state = CONSTANTS.ORDER_STATUS[updated_order_data["state"]]
 
         order_update = OrderUpdate(
             client_order_id=tracked_order.client_order_id,
@@ -291,5 +291,4 @@ class OceanExchange(ExchangePyBase):
         pass
 
     async def _user_stream_event_listener(self):
-
         pass

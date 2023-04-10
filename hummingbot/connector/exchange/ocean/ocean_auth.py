@@ -50,9 +50,9 @@ class OceanAuth(AuthBase):
     def ws_login_parameters(self) -> Dict[str, Any]:
         cur = int(time.time() * 1000)
         return {
-            "identifier": json.dumps({"handler": CONSTANTS.AUTH_HANDLER}),
+            "identifier": {"handler": CONSTANTS.AUTH_HANDLER},
             "command": "message",
-            "data": json.dumps({
+            "data": {
                 "action": "login",
                 "uuid": str(uuid.uuid4()),
                 "args": {},
@@ -64,7 +64,7 @@ class OceanAuth(AuthBase):
                     "verb": "GET",
                     "path": "/ws/v1"
                 }
-            })
+            }
         }
 
     def ws_generate_signature(self, cur: str) -> str:

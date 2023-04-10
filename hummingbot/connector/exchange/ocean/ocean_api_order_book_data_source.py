@@ -1,5 +1,4 @@
 import asyncio
-import json
 import uuid
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -81,27 +80,27 @@ class OceanAPIOrderBookDataSource(OrderBookTrackerDataSource):
             for trading_pair in self._trading_pairs:
                 symbol: str = await self._connector.exchange_symbol_associated_to_pair(trading_pair)
                 payload = {
-                    "identifier": json.dumps({"handler": CONSTANTS.ORDER_BOOK_HANDLER}),
+                    "identifier": {"handler": CONSTANTS.ORDER_BOOK_HANDLER},
                     "command": "message",
-                    "data": json.dumps({
+                    "data": {
                         "action": "index",
                         "uuid": str(uuid.uuid4()),
                         "args": {
                             "market_id": symbol
                         }
-                    })
+                    }
                 }
                 subscribe_orderbook_request: WSJSONRequest = WSJSONRequest(payload=payload)
                 payload = {
-                    "identifier": json.dumps({"handler": CONSTANTS.TICKER_HANDLER}),
+                    "identifier": {"handler": CONSTANTS.TICKER_HANDLER},
                     "command": "message",
-                    "data": json.dumps({
+                    "data": {
                         "action": "index",
                         "uuid": str(uuid.uuid4()),
                         "args": {
                             "market_id": [symbol]
                         }
-                    })
+                    }
                 }
                 subscribe_trade_request: WSJSONRequest = WSJSONRequest(payload=payload)
                 await ws.send(subscribe_orderbook_request)

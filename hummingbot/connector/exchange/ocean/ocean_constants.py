@@ -44,6 +44,7 @@ ORDER_STATUS = {
     "cancel": OrderState.CANCELED,
     "done": OrderState.FILLED,
     "cancelling": OrderState.PENDING_CANCEL,
+    "incomplete": OrderState.PARTIALLY_FILLED
 }
 
 RATE_LIMITS = [
