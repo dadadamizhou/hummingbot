@@ -6,7 +6,7 @@ ORDER_ID_PREFIX = ""
 
 # Base API & WS URLs
 REST_URL = "https://api.oceanex.pro/v1"
-WSS_URL = "wss://ws.oceanex.cc/ws/v1"
+WSS_URL = "wss://ws.oceanex.pro/ws/v1"
 
 # Public API
 TICKERS_URL = "/tickers"
@@ -51,8 +51,13 @@ RATE_LIMITS = [
     RateLimit(limit_id=TICKERS_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=SERVER_TIME_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_BOOK_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=FEES_TRADING_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=CANCEL_ORDER_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ACCOUNTS_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=TRADES_PATH_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=ORDER_BOOK_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=TICKER_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=AUTH_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=ORDER_HISTORY_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND)
 ]

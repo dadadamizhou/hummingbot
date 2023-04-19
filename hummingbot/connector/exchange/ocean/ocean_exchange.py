@@ -141,9 +141,9 @@ class OceanExchange(ExchangePyBase):
                 retval.append(
                     TradingRule(
                         trading_pair=trading_pair,
-                        min_order_size=Decimal(0),  # xxx
-                        min_base_amount_increment=Decimal(0),  # xxx
-                        min_price_increment=Decimal(0),  # xxx
+                        min_order_size=Decimal(0.0001),
+                        min_base_amount_increment=Decimal("1e-4"),
+                        min_price_increment=Decimal("1e-2")
                     )
                 )
             except Exception:
@@ -291,4 +291,89 @@ class OceanExchange(ExchangePyBase):
         pass
 
     async def _user_stream_event_listener(self):
+        # async for message in self._iter_user_event_queue():
+        #     try:
+        #         identifier: str = message.get("identifier", None)
+        #         if identifier is not None:
+        #             identifier = json.loads(identifier)
+        #             handler = identifier["handler"]
+        #             if handler == CONSTANTS.ORDER_HISTORY_HANDLER:
+        #                 data: Dict[str, Any] = json.loads(message.get("data"))
+        #
+        #                 for resource in data["resources"]:
+        #                     fillable_order_list = list(
+        #                         filter(
+        #                             lambda order: order.exchange_order_id == resource["id"],
+        #                             list(self._order_tracker.all_fillable_orders.values()),
+        #                         )
+        #                     )
+        #                     updatable_order_list = list(
+        #                         filter(
+        #                             lambda order: order.exchange_order_id == resource["id"],
+        #                             list(self._order_tracker.all_updatable_orders.values()),
+        #                         )
+        #                     )
+        #                     fillable_order = None
+        #                     if len(fillable_order_list) > 0:
+        #                         fillable_order = fillable_order_list[0]
+        #                     updatable_order = None
+        #                     if len(updatable_order_list) > 0:
+        #                         updatable_order = updatable_order_list[0]
+        #                     new_state: OrderState = CONSTANTS.ORDER_STATUS[resource["state"]]
+        #                     if fillable_order is not None:
+        #                         is_fill_candidate_by_state = new_state in [OrderState.PARTIALLY_FILLED, OrderState.FILLED]
+        #                         is_fill_candidate_by_amount = fillable_order.executed_amount_base < Decimal(resource["executed_volume"])
+        #
+        #                         if is_fill_candidate_by_state and is_fill_candidate_by_amount:
+        #                             try:
+        #                                 order_fill_data: Dict[str, Any] = await self._request_order_fills(fillable_order)
+        #                                 if "data" in order_fill_data:
+        #                                     for tx in order_fill_data["data"]:
+        #                                         fee_token = (fillable_order.base_asset
+        #                                                      if fillable_order.trade_type == TradeType.BUY
+        #                                                      else fillable_order.quote_asset)
+        #                                         fee = TradeFeeBase.new_spot_fee(
+        #                                             fee_schema=self.trade_fee_schema(),
+        #                                             trade_type=fillable_order.trade_type,
+        #                                             flat_fees=[TokenAmount(token=fee_token,
+        #                                                                    amount=Decimal(str(tx["tradeFee"])))],
+        #                                         )
+        #                                         trade_update = TradeUpdate(
+        #                                             trade_id=str(tx["txUuid"]),
+        #                                             client_order_id=fillable_order.client_order_id,
+        #                                             exchange_order_id=tx["orderUuid"],
+        #                                             trading_pair=fillable_order.trading_pair,
+        #                                             fee=fee,
+        #                                             fill_base_amount=Decimal(str(tx["dealQuantity"])),
+        #                                             fill_quote_amount=Decimal(str(tx["dealPrice"])) * Decimal(
+        #                                                 str(tx["dealQuantity"])),
+        #                                             fill_price=Decimal(str(tx["dealPrice"])),
+        #                                             fill_timestamp=int(tx["dealTime"]) * 1e-3,
+        #                                         )
+        #                                         self._order_tracker.process_trade_update(trade_update)
+        #
+        #                             except asyncio.CancelledError:
+        #                                 raise
+        #                             except Exception as e:
+        #                                 self.logger().exception("Unexpected error processing order fills for "
+        #                                                         f"{fillable_order.client_order_id}. Error: {str(e)}")
+        #                     if updatable_order is not None:
+        #                         order_update = OrderUpdate(
+        #                             trading_pair=updatable_order.trading_pair,
+        #                             update_timestamp=int(data["updateTime"]) * 1e-3,
+        #                             new_state=new_state,
+        #                             client_order_id=data["customerID"],
+        #                             exchange_order_id=data["uuid"],
+        #                         )
+        #                         self._order_tracker.process_order_update(order_update)
+        #                 pass
+        #         else:
+        #             raise
+        #
+        #     except asyncio.CancelledError:
+        #         raise
+        #     except Exception:
+        #         self.logger().exception("Unexpected error in user stream listener loop.")
+        #         await self._sleep(5.0)
+
         pass

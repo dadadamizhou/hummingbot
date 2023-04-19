@@ -27,7 +27,6 @@ class OceanAuth(AuthBase):
             request.data = self.construct_request_body(request.data)
         else:
             request.params = self.construct_request_body(request.params)
-        print(request.data)
         return request
 
     async def ws_authenticate(self, request: WSRequest) -> WSRequest:
@@ -69,7 +68,7 @@ class OceanAuth(AuthBase):
 
     def ws_generate_signature(self, cur: str) -> str:
         private_key = serialization.load_pem_private_key(
-            self.private_key.encode('ascii'),
+            self.private_key,
             password=None,
             backend=default_backend()
         )

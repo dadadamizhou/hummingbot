@@ -1,5 +1,4 @@
 import asyncio
-import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS
@@ -43,7 +42,8 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
         payload = self._auth.ws_login_parameters()
         login_request: WSJSONRequest = WSJSONRequest(payload=payload)
 
-        await ws.send(login_request)
+        async with self._api_factory.throttler.execute_task(limit_id=CONSTANTS.AUTH_HANDLER):
+            await ws.send(login_request)
 
         response: WSResponse = await ws.receive()
         message = response.data
@@ -54,31 +54,18 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
         return ws
 
     async def _subscribe_channels(self, websocket_assistant: WSAssistant):
-        try:
-            for trading_pair in self._trading_pairs:
-                payload = {
-                    "identifier": {"handler": CONSTANTS.OrderHistoryHandler},
-                    "command": "message",
-                    "data": {
-                        "action": "index",
-                        "uuid": str(uuid.uuid4()),
-                        "args": {
-                            "market": await self._connector.exchange_symbol_associated_to_pair(trading_pair)
-                        }
-                    }
-                }
-                subscribe_asset_request: WSJSONRequest = WSJSONRequest(payload=payload)
-                await websocket_assistant.send(subscribe_asset_request)
-            self.logger().info("Subscribed to user assets and order websocket channels...")
-        except asyncio.CancelledError:
-            raise
-        except Exception:
-            self.logger().exception("Unexpected error occurred subscribing to user asset and order updates...")
-            raise
+        """
+                Subscribes to the trade events and diff orders events through the provided websocket connection.
+
+                Binance does not require any channel subscription.
+
+                :param websocket_assistant: the websocket assistant used to connect to the exchange
+                """
         pass
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         async for ws_response in websocket_assistant.iter_messages():
+            print(ws_response)
             message = ws_response.data
             if "type" in message and message['type'] == "ping":
                 pong_request = WSJSONRequest(payload={"command": "pong"})
