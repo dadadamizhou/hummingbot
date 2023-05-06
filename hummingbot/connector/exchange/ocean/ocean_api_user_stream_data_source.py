@@ -57,7 +57,7 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
         """
                 Subscribes to the trade events and diff orders events through the provided websocket connection.
 
-                Binance does not require any channel subscription.
+                Ocean does not require any channel subscription.
 
                 :param websocket_assistant: the websocket assistant used to connect to the exchange
                 """
@@ -65,8 +65,9 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
     async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
         async for ws_response in websocket_assistant.iter_messages():
-            print(ws_response)
             message = ws_response.data
+            # print('给我看看收到了什么通知¥¥¥¥¥¥' * 20)
+            # print(message)
             if "type" in message and message['type'] == "ping":
                 pong_request = WSJSONRequest(payload={"command": "pong"})
                 await websocket_assistant.send(request=pong_request)

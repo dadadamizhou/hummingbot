@@ -24,7 +24,7 @@ class OceanAuth(AuthBase):
 
     async def rest_authenticate(self, request: RESTRequest) -> RESTRequest:
         if request.method == RESTMethod.POST:
-            request.data = self.construct_request_body(request.data)
+            request.data = json.dumps(self.construct_request_body(request.data))
         else:
             request.params = self.construct_request_body(request.params)
         return request
@@ -33,6 +33,8 @@ class OceanAuth(AuthBase):
         return request
 
     def construct_request_body(self, data):
+        if type(data) == str:
+            data = json.loads(data)
         pay_load = {
             "uid": self.uid,
             "apikey_id": self.apikey_id,
@@ -44,7 +46,7 @@ class OceanAuth(AuthBase):
         request_body = {
             "user_jwt": jwt_token
         }
-        return json.dumps(request_body)
+        return request_body
 
     def ws_login_parameters(self) -> Dict[str, Any]:
         cur = int(time.time() * 1000)

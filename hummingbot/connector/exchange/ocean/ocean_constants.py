@@ -10,6 +10,7 @@ WSS_URL = "wss://ws.oceanex.pro/ws/v1"
 
 # Public API
 TICKERS_URL = "/tickers"
+TRADES_URL = "/trades"
 SERVER_TIME_URL = "/timestamp"
 ORDER_BOOK_URL = "/order_book"
 FEES_TRADING_URL = "/fees/trading"
@@ -26,6 +27,8 @@ TICKER_HANDLER = "TickerHandler"
 
 AUTH_HANDLER = "AuthHandler"
 ORDER_HISTORY_HANDLER = "OrderHistoryHandler"
+
+HTTP_TIME_OUT = 5
 
 WS_HEARTBEAT_TIME_INTERVAL = 30
 
@@ -49,6 +52,7 @@ ORDER_STATUS = {
 
 RATE_LIMITS = [
     RateLimit(limit_id=TICKERS_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=TRADES_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=SERVER_TIME_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_BOOK_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=FEES_TRADING_URL, limit=MAX_REQUEST, time_interval=ONE_SECOND),

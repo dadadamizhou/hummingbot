@@ -29,7 +29,7 @@ class OceanOrderBook(OrderBook):
         }, timestamp=timestamp)
 
     @classmethod
-    def trade_message_from_exchange(cls, msg: Dict[str, any], metadata: Optional[Dict] = None):
+    def trade_message_from_snapshot(cls, msg: Dict[str, any], metadata: Optional[Dict] = None):
         """
         Creates a trade message with the information from the trade event sent by the exchange
         :param msg: the trade event details sent by the exchange
@@ -41,8 +41,8 @@ class OceanOrderBook(OrderBook):
         return OrderBookMessage(OrderBookMessageType.TRADE, {
             "trading_pair": msg["trading_pair"],
             "trade_type": float(TradeType.SELL.value),
-            "trade_id": int(msg["at"]),
-            "update_id": msg["at"],
-            "price": float(msg["last"]),
+            "trade_id": int(msg["id"]),
+            "update_id": msg["created_on"],
+            "price": float(msg["price"]),
             "amount": float(msg["volume"])
-        }, timestamp=msg["at"])
+        }, timestamp=msg["created_on"])
