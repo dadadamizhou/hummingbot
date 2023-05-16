@@ -1,3 +1,4 @@
+import asyncio
 from decimal import Decimal
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
@@ -11,9 +12,9 @@ from hummingbot.connector.exchange_py_base import ExchangePyBase
 from hummingbot.connector.trading_rule import TradingRule
 from hummingbot.connector.utils import combine_to_hb_trading_pair
 from hummingbot.core.data_type.common import OrderType, TradeType
-from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderUpdate, TradeUpdate
+from hummingbot.core.data_type.in_flight_order import InFlightOrder, OrderState, OrderUpdate, TradeUpdate
 from hummingbot.core.data_type.order_book_tracker_data_source import OrderBookTrackerDataSource
-from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TradeFeeBase
+from hummingbot.core.data_type.trade_fee import AddedToCostTradeFee, TokenAmount, TradeFeeBase
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.utils.estimate_fee import build_trade_fee
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -121,7 +122,7 @@ class OceanExchange(ExchangePyBase):
             trading_pairs=self._trading_pairs,
             connector=self,
             api_factory=self._web_assistants_factory,
-            auth=self._auth,
+            auth=self._auth
         )
 
     def _initialize_trading_pair_symbols_from_exchange_info(self, exchange_info: Dict[str, Any]):
@@ -170,8 +171,6 @@ class OceanExchange(ExchangePyBase):
             path_url=CONSTANTS.ORDER_PATH_URL,
             data=api_params,
             is_auth_required=True)
-        # print('下单！！！！！！'*20)
-        # print(response)
         if response.get("code") != 0:
             err_code: int = response.get("code")
             err_msg: str = response.get("message")
@@ -246,12 +245,6 @@ class OceanExchange(ExchangePyBase):
         balances = response.get("data", None)
         for balance_entry in balances["accounts"]:
             asset_name = balance_entry["currency"].upper()
-
-            if asset_name == 'BTC':
-                balance_entry["balance"] = 1
-            if asset_name == 'USDT':
-                balance_entry["balance"] = 2000
-
             free_balance = Decimal(balance_entry["balance"])
             total_balance = Decimal(balance_entry["balance"]) + Decimal(balance_entry["locked"])
             self._account_available_balances[asset_name] = free_balance
@@ -294,10 +287,60 @@ class OceanExchange(ExchangePyBase):
         pass
 
     async def _all_trade_updates_for_order(self, order: InFlightOrder) -> List[TradeUpdate]:
+        # http 更新订单信息的地方
         trade_updates = []
         return trade_updates
 
     async def _user_stream_event_listener(self):
-        # async for event_message in self._iter_user_event_queue():
-        #     print(event_message)
-        pass
+        async for message in self._iter_user_event_queue():
+            try:
+                data: Dict[str, Any] = message["message"]["data"]
+                client_order_id: str = message["message"]["uuid"].split('_')[0]
+                updatable_order = self._order_tracker.all_updatable_orders.get(client_order_id)
+                fillable_order = self._order_tracker.all_fillable_orders.get(data["id"])
+
+                new_state: OrderState = CONSTANTS.ORDER_STATUS[data["state"]]
+                update_timestamp = int(data["created_on"])
+                if fillable_order is not None:
+                    is_fill_candidate_by_state = new_state in [OrderState.PARTIALLY_FILLED, OrderState.FILLED]
+                    is_fill_candidate_by_amount = fillable_order.executed_amount_base < Decimal(data["executed_volume"])
+
+                    if is_fill_candidate_by_state and is_fill_candidate_by_amount:
+                        for trade in data["trades"]:
+                            fee_token = (fillable_order.base_asset
+                                         if fillable_order.trade_type == TradeType.BUY
+                                         else fillable_order.quote_asset)
+                            fee = TradeFeeBase.new_spot_fee(
+                                fee_schema=self.trade_fee_schema(),
+                                trade_type=fillable_order.trade_type,
+                                flat_fees=[TokenAmount(token=fee_token, amount=Decimal(str(trade["bid_fee"])))],
+                            )
+                            trade_update = TradeUpdate(
+                                trade_id=str(trade["id"]),
+                                client_order_id=fillable_order.client_order_id,
+                                exchange_order_id=trade["order_id"],
+                                trading_pair=fillable_order.trading_pair,
+                                fee=fee,
+                                fill_base_amount=Decimal(str(trade["volume"])),
+                                fill_quote_amount=Decimal(str(trade["price"])) * Decimal(
+                                    str(trade["volume"])),
+                                fill_price=Decimal(str(trade["price"])),
+                                fill_timestamp=int(trade["created_on"]),
+                            )
+                            update_timestamp = int(trade["created_on"])
+                            self._order_tracker.process_trade_update(trade_update)
+
+                if updatable_order is not None:
+                    order_update = OrderUpdate(
+                        trading_pair=updatable_order.trading_pair,
+                        update_timestamp=update_timestamp,
+                        new_state=new_state,
+                        client_order_id=client_order_id,
+                        exchange_order_id=data["id"],
+                    )
+                    self._order_tracker.process_order_update(order_update)
+            except asyncio.CancelledError:
+                raise
+            except Exception:
+                self.logger().exception("Unexpected error in user stream listener loop.")
+                await self._sleep(5.0)

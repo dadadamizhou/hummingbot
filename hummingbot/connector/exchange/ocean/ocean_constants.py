@@ -26,6 +26,7 @@ ORDER_BOOK_HANDLER = "OrderBookHandler"
 TICKER_HANDLER = "TickerHandler"
 
 AUTH_HANDLER = "AuthHandler"
+ORDER_HANDLER = "OrderHandler"
 ORDER_HISTORY_HANDLER = "OrderHistoryHandler"
 
 HTTP_TIME_OUT = 5
@@ -63,5 +64,6 @@ RATE_LIMITS = [
     RateLimit(limit_id=ORDER_BOOK_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=TICKER_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=AUTH_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
+    RateLimit(limit_id=ORDER_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND),
     RateLimit(limit_id=ORDER_HISTORY_HANDLER, limit=MAX_REQUEST, time_interval=ONE_SECOND)
 ]

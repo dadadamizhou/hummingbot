@@ -1,8 +1,10 @@
 import asyncio
+import uuid
 from typing import TYPE_CHECKING, List, Optional
 
 from hummingbot.connector.exchange.ocean import ocean_constants as CONSTANTS
 from hummingbot.connector.exchange.ocean.ocean_auth import OceanAuth
+from hummingbot.core.data_type.in_flight_order import OrderState
 from hummingbot.core.data_type.user_stream_tracker_data_source import UserStreamTrackerDataSource
 from hummingbot.core.web_assistant.connections.data_types import WSJSONRequest, WSResponse
 from hummingbot.core.web_assistant.web_assistants_factory import WebAssistantsFactory
@@ -28,9 +30,7 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
         self._auth = auth
         self._current_listen_key = None
         self._api_factory = api_factory
-
-        self._listen_key_initialized_event: asyncio.Event = asyncio.Event()
-        self._last_listen_key_ping_ts = 0
+        self._connector = connector
 
     async def _connected_websocket_assistant(self) -> WSAssistant:
         """
@@ -53,21 +53,77 @@ class OceanAPIUserStreamDataSource(UserStreamTrackerDataSource):
 
         return ws
 
-    async def _subscribe_channels(self, websocket_assistant: WSAssistant):
+    async def listen_for_user_stream(self, output: asyncio.Queue):
         """
-                Subscribes to the trade events and diff orders events through the provided websocket connection.
+        Connects to the user private channel in the exchange using a websocket connection. With the established
+        connection listens to
 
-                Ocean does not require any channel subscription.
+        all balance events and order updates provided by the exchange, and stores them in the
+        output queue
 
-                :param websocket_assistant: the websocket assistant used to connect to the exchange
-                """
-        pass
+        :param output: the queue to use to store the received messages
+        """
+        while True:
+            try:
+                self._ws_assistant = await self._connected_websocket_assistant()
+                await self._subscribe_channels(websocket_assistant=self._ws_assistant, queue=output)
+                # await self._send_ping(websocket_assistant=self._ws_assistant)  # to update last_recv_timestamp
+                # await self._process_websocket_messages(websocket_assistant=self._ws_assistant, queue=output)
+            except asyncio.CancelledError:
+                raise
+            except ConnectionError as connection_exception:
+                self.logger().warning(f"The websocket connection was closed ({connection_exception})")
+            except Exception:
+                self.logger().exception("Unexpected error while listening to user stream. Retrying after 5 seconds...")
+                await self._sleep(1.0)
+            finally:
+                await self._on_user_stream_interruption(websocket_assistant=self._ws_assistant)
+                self._ws_assistant = None
 
-    async def _process_websocket_messages(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
-        async for ws_response in websocket_assistant.iter_messages():
-            message = ws_response.data
-            # print('给我看看收到了什么通知¥¥¥¥¥¥' * 20)
-            # print(message)
-            if "type" in message and message['type'] == "ping":
-                pong_request = WSJSONRequest(payload={"command": "pong"})
-                await websocket_assistant.send(request=pong_request)
+    async def _subscribe_channels(self, websocket_assistant: WSAssistant, queue: asyncio.Queue):
+        while True:
+            cancel_order = []
+            for order in self._connector._order_tracker.all_orders.values():
+                if order.current_state == OrderState.FILLED:
+                    continue
+                # 暂时预留一下看看 被取消的订单 是否在这里更新一下数据
+                if order.current_state == OrderState.CANCELED:
+                    if order.exchange_order_id in cancel_order:
+                        continue
+                    cancel_order.append(order.exchange_order_id)
+                request_uuid = str(order.client_order_id) + "_" + str(uuid.uuid4())
+                if order.current_state == CONSTANTS.ORDER_STATUS["cancel"]:
+                    handler = CONSTANTS.ORDER_HISTORY_HANDLER
+                else:
+                    handler = CONSTANTS.ORDER_HANDLER
+                payload = {
+                    "identifier": {"handler": handler},
+                    "command": "message",
+                    "data": {
+                        "action": "show",
+                        "uuid": request_uuid,
+                        "args": {
+                            "id": order.exchange_order_id
+                        }
+                    }
+                }
+                subscribe_order_request: WSJSONRequest = WSJSONRequest(payload=payload)
+                await websocket_assistant.send(subscribe_order_request)
+            while True:
+                try:
+                    await asyncio.wait_for(self._process_ws_messages(ws=websocket_assistant, queue=queue), timeout=1)
+                except asyncio.TimeoutError:
+                    break
+            # 更新一下余额
+            await self._connector._update_balances()
+            await self._sleep(1)
+
+    async def _process_ws_messages(self, ws: WSAssistant, queue: asyncio.Queue):
+        response = await ws.receive()
+        message = response.data
+        if "type" in message and message['type'] == "ping":
+            pong_request = WSJSONRequest(payload={"command": "pong"})
+            await ws.send(request=pong_request)
+        if "identifier" in message:
+            if message["identifier"]["handler"] in [CONSTANTS.ORDER_HANDLER, CONSTANTS.ORDER_HISTORY_HANDLER]:
+                queue.put_nowait(message)
